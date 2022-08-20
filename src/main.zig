@@ -58,7 +58,3 @@ fn jq(in: std.fs.File, out: std.fs.File, errOut: std.fs.File, allocator: std.mem
     }, writer);
     try writer.print("\n", .{});
 }
-
-// test "basic test" {
-//     try std.testing.expectEqual(10, 3 + 7);
-// }
