@@ -1,0 +1,13 @@
+{
+    "string": "abcd",
+    "integer": 1234,
+    "bool": true,
+    "array": [
+        "a1",
+        "a2",
+        "a3"
+    ],
+    "object": {
+        "col": "xxx"
+    }
+}
