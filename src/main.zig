@@ -7,12 +7,12 @@ pub fn main() anyerror!void {
 
     var args = try std.process.argsWithAllocator(allocator);
     defer args.deinit();
-    _ = args.nextPosix().?; // skip program name
+    _ = args.next().?; // skip program name
 
     const stdout = std.io.getStdOut();
     const stderr = std.io.getStdErr();
-    
-    var arg = args.nextPosix();
+
+    var arg = args.next();
     if (arg == null) {
         const stdin = std.io.getStdIn();
         jq(stdin, stdout, stderr, allocator) catch |err| {
@@ -22,12 +22,12 @@ pub fn main() anyerror!void {
         return;
     }
 
-    while (true) : (arg = args.nextPosix()) {
+    while (true) : (arg = args.next()) {
         if (arg == null) {
             break;
         }
 
-        const file = try std.fs.cwd().openFile(arg.?, .{ .read = true, .write = false });
+        const file = try std.fs.cwd().openFile(arg.?, .{ .mode = .read_only });
         defer file.close();
         jq(file, stdout, stderr, allocator) catch |err| {
             std.log.warn("error reading file '{s}': {}", .{ arg.?, err });
@@ -39,22 +39,18 @@ fn jq(in: std.fs.File, out: std.fs.File, errOut: std.fs.File, allocator: std.mem
     const reader = in.reader();
     const writer = out.writer();
     const errWriter = errOut.writer();
+    _ = errWriter;
 
-    var parser = std.json.Parser.init(allocator, false);
-    defer parser.deinit();
-    
     var payload = try reader.readAllAlloc(allocator, std.math.maxInt(usize));
     defer allocator.free(payload);
 
-    var parsed = parser.parse(payload) catch |err| {
-        try errWriter.print("error: {s}\n", .{@errorName(err)});
-
-        return;
-    };
+    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, payload, .{});
     defer parsed.deinit();
+    const root = parsed.value;
 
-    try parsed.root.jsonStringify(std.json.StringifyOptions{
-        .whitespace = std.json.StringifyOptions.Whitespace{}
-    }, writer);
+    const writer_stream = std.json.writeStream(writer, .{});
+    _ = writer_stream;
+
+    root.dump();
     try writer.print("\n", .{});
 }

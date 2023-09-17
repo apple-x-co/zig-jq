@@ -3,7 +3,7 @@
 ## Build
 
 ```bash
-zig build -Drelease-fast
+zig build -Doptimize=ReleaseFast
 ```
 
 ## Run
